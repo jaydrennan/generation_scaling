@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Generator</title>
+</head>
+<body>
+
+    <div>
+        <label for="promptInput">Enter your prompt:</label>
+        <input id="promptInput" type="text" placeholder="Your prompt here">
+    </div>
+
+    <button id="generateImageBtn">Generate 1 Image</button>
+    <button id="generate5ImagesBtn">Generate 5 Images</button>
+
+
+    <div id="loadingIndicator" style="display: none;">Loading...</div>
+
+
+    <div id="generationTime" style="display: none;">Generation Time: <span></span> seconds</div>
+
+
+    <div id="imagePaths" style="display: none;">Image Paths: <div></div></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const promptInput = document.getElementById("promptInput");
+            const generateImageBtn = document.getElementById("generateImageBtn");
+            const generate5ImagesBtn = document.getElementById("generate5ImagesBtn");
+            const imagePathsDiv = document.getElementById("imagePaths");
+            const imagePathsContainer = imagePathsDiv.querySelector("div");
+            const loadingIndicator = document.getElementById("loadingIndicator");
+            const generationTimeDiv = document.getElementById("generationTime");
+            const generationTimeSpan = generationTimeDiv.querySelector("span");
+
+            function clearPreviousResults() {
+
+                while (imagePathsContainer.firstChild) {
+                    imagePathsContainer.removeChild(imagePathsContainer.firstChild);
+                }
+            }
+
+            function fetchImageData(endpoint) {
+                const prompt = promptInput.value.trim();
+                clearPreviousResults();
+
+                loadingIndicator.style.display = 'block';
+                imagePathsDiv.style.display = 'none';
+                generationTimeDiv.style.display = 'none';
+
+                fetch(endpoint, {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+
+                    const paths = data.image_paths || [data.image_path];
+                    paths.forEach(path => {
+                        const pathElement = document.createElement("div");
+                        pathElement.textContent = path;
+                        imagePathsContainer.appendChild(pathElement);
+                    });
+                    imagePathsDiv.style.display = 'block';
+
+
+                    generationTimeSpan.textContent = data.generation_time;
+                    generationTimeDiv.style.display = 'block';
+                })
+                .catch(error => console.error('Error:', error))
+                .finally(() => {
+                    loadingIndicator.style.display = 'none';
+                });
+            }
+
+            generateImageBtn.addEventListener("click", function() {
+                fetchImageData("/gen_img");
+            });
+
+            generate5ImagesBtn.addEventListener("click", function() {
+                fetchImageData("/gen_5_img");
+            });
+        });
+    </script>
+</body>
+</html>
